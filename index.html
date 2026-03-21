@@ -47,6 +47,48 @@
         #studentForm .btn-stack { grid-column:1/-1; }
         @media(max-width:650px){ #studentForm { grid-template-columns:1fr; } }
 
+        /* ── TABS ── */
+        .tab-bar {
+            display:flex; max-width:650px; margin:0 auto 15px auto;
+            background:#fff; border-radius:12px; padding:5px;
+            border:1px solid #BFDBFE; gap:5px;
+        }
+        .tab-btn {
+            flex:1; min-height:44px; border:none; border-radius:8px;
+            font-weight:700; font-size:0.88rem; cursor:pointer;
+            color:#64748b; background:transparent;
+            transition:all 0.2s; display:flex; align-items:center;
+            justify-content:center; gap:7px;
+        }
+        .tab-btn.active {
+            background:var(--primary); color:#fff;
+            box-shadow:0 2px 8px rgba(30,58,138,0.25);
+        }
+        .tab-panel { display:none; }
+        .tab-panel.active { display:block; }
+        #tab-summary .summary-card {
+            background:#fff; border-radius:15px; padding:20px;
+            border:1px solid #BFDBFE; margin:0 auto 20px auto;
+            max-width:960px; overflow-x:auto;
+        }
+        #tab-summary .summary-stats {
+            display:flex; gap:10px; flex-wrap:wrap;
+            max-width:960px; margin:0 auto 15px auto;
+        }
+        #tab-summary .sstat {
+            flex:1; min-width:110px; background:#fff; padding:14px 10px;
+            border-radius:10px; text-align:center; border:1px solid #BFDBFE;
+        }
+        #tab-summary .sstat h3 { margin:0 0 4px 0; font-size:1.4rem; color:var(--primary); }
+        #tab-summary .sstat p  { margin:0; font-size:0.72rem; color:#64748b; font-weight:600; text-transform:uppercase; }
+        /* Dashboard mini-bar charts */
+        .d-bar-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+        .d-bar-label { font-size:0.75rem; font-weight:700; color:#374151; min-width:40px; text-align:right; }
+        .d-bar-track { flex:1; background:#e5e7eb; border-radius:99px; height:14px; overflow:hidden; }
+        .d-bar-fill  { height:100%; border-radius:99px; transition:width 0.5s ease; }
+        .d-bar-count { font-size:0.75rem; font-weight:700; color:#1E3A8A; min-width:30px; }
+
+
         /* ═══════════════════════════════════════════════
            PRINT STYLES
            KEY: Use "body > *:not(#printArea) { display:none }"
@@ -78,14 +120,17 @@
                 padding:6mm 8mm;
                 display:flex !important;
                 flex-direction:column !important;
-                page-break-after:always;
                 page-break-inside:avoid;
                 overflow:hidden;
                 background:white;
                 font-family:'Segoe UI',sans-serif;
             }
-            /* Last page: no trailing blank page */
-            .print-page:last-child { page-break-after:avoid; }
+            /* JS adds this class only to non-last pages — never to the final page.
+               This is the only reliable cross-browser fix for blank trailing pages. */
+            .print-page-break {
+                page-break-after:always;
+                break-after:page;
+            }
 
             /* Header */
             .print-header {
@@ -162,6 +207,16 @@
 
 <div id="main-content">
     <header><h2>Student Portal v1.0</h2></header>
+
+    <!-- TAB BAR -->
+    <div class="tab-bar">
+        <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">📋 Form</button>
+        <button class="tab-btn"        id="tabBtn2" onclick="switchTab(2)">📋 Summary</button>
+        <button class="tab-btn"        id="tabBtn3" onclick="switchTab(3)">📊 Dashboard</button>
+    </div>
+
+    <!-- ═══════ TAB 1: STUDENT DATA FORM ═══════ -->
+    <div class="tab-panel active" id="tab-form">
 
     <div class="dashboard">
         <div class="stat"><h3 id="totalStudents">0</h3><p>Total Students</p></div>
@@ -278,7 +333,182 @@
         </form>
     </div>
     <p class="version-tag">Version 1.0 | Formal Border | 35 Fields + Vocational</p>
-</div>
+
+    </div><!-- end #tab-form -->
+
+    <!-- ═══════ TAB 2: SUMMARY ═══════ -->
+    <div class="tab-panel" id="tab-summary">
+
+        <!-- Quick stats row -->
+        <div class="summary-stats">
+            <div class="sstat"><h3 id="s-total">0</h3><p>Total</p></div>
+            <div class="sstat"><h3 id="s-boys">0</h3><p>Boys</p></div>
+            <div class="sstat"><h3 id="s-girls">0</h3><p>Girls</p></div>
+            <div class="sstat"><h3 id="s-ix">0</h3><p>Class IX</p></div>
+            <div class="sstat"><h3 id="s-x">0</h3><p>Class X</p></div>
+            <div class="sstat"><h3 id="s-xi">0</h3><p>Class XI</p></div>
+            <div class="sstat"><h3 id="s-xii">0</h3><p>Class XII</p></div>
+        </div>
+
+        <!-- Filters + Table -->
+        <div class="summary-card">
+            <h3 style="margin:0 0 12px 0;color:var(--primary);">📋 Student List</h3>
+
+            <!-- Filter Row -->
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center;">
+                <select id="tbl-class"    onchange="renderClassTable()" style="flex:1;min-width:110px;padding:7px 8px;border-radius:7px;border:1.5px solid #D1D5DB;font-size:0.82rem;">
+                    <option value="">All Classes</option>
+                    <option>IX</option><option>X</option><option>XI</option><option>XII</option>
+                </select>
+                <select id="tbl-year"     onchange="renderClassTable()" style="flex:1;min-width:110px;padding:7px 8px;border-radius:7px;border:1.5px solid #D1D5DB;font-size:0.82rem;">
+                    <option value="">All Years</option>
+                    <option>2023-2024</option><option>2024-2025</option><option>2025-2026</option>
+                    <option>2026-2027</option><option>2027-2028</option><option>2028-2029</option>
+                    <option>2029-2030</option><option>2030-2031</option><option>2031-2032</option>
+                    <option>2032-2033</option><option>2033-2034</option><option>2034-2035</option>
+                    <option>2035-2036</option><option>2036-2037</option><option>2037-2038</option>
+                    <option>2038-2039</option><option>2039-2040</option>
+                </select>
+                <select id="tbl-gender"   onchange="renderClassTable()" style="flex:1;min-width:100px;padding:7px 8px;border-radius:7px;border:1.5px solid #D1D5DB;font-size:0.82rem;">
+                    <option value="">All Gender</option>
+                    <option>Male</option><option>Female</option>
+                </select>
+                <select id="tbl-voc"      onchange="renderClassTable()" style="flex:1;min-width:130px;padding:7px 8px;border-radius:7px;border:1.5px solid #D1D5DB;font-size:0.82rem;">
+                    <option value="">Vocational: All</option>
+                    <option value="Yes">Vocational: Yes</option>
+                    <option value="No">Vocational: No</option>
+                </select>
+                <select id="tbl-orphan"   onchange="renderClassTable()" style="flex:1;min-width:120px;padding:7px 8px;border-radius:7px;border:1.5px solid #D1D5DB;font-size:0.82rem;">
+                    <option value="">Orphan: All</option>
+                    <option value="Yes">Orphan: Yes</option>
+                    <option value="No">Orphan: No</option>
+                </select>
+                <select id="tbl-hostel"   onchange="renderClassTable()" style="flex:1;min-width:120px;padding:7px 8px;border-radius:7px;border:1.5px solid #D1D5DB;font-size:0.82rem;">
+                    <option value="">Hostel: All</option>
+                    <option value="Yes">Hostel: Yes</option>
+                    <option value="No">Hostel: No</option>
+                </select>
+                <select id="tbl-aplbpl"   onchange="renderClassTable()" style="flex:1;min-width:110px;padding:7px 8px;border-radius:7px;border:1.5px solid #D1D5DB;font-size:0.82rem;">
+                    <option value="">APL/BPL: All</option>
+                    <option value="APL">APL</option>
+                    <option value="BPL">BPL</option>
+                </select>
+                <button onclick="clearTableFilters()" style="flex:none;min-height:36px;padding:7px 14px;background:#64748b;border-radius:7px;font-size:0.82rem;font-weight:700;border:none;color:white;cursor:pointer;">✕ Clear</button>
+            </div>
+
+            <!-- Scrollable Table — all fields -->
+            <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:8px;">
+                <table id="summaryTable" style="min-width:1400px;width:100%;border-collapse:collapse;font-size:0.8rem;">
+                    <thead>
+                        <tr style="background:#1E3A8A;color:white;position:sticky;top:0;">
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">#</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Class</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Div</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Roll</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">GR No</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Student Name</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Gender</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">DOB</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Caste</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Father</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Mother</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Mobile 1</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Mobile 2</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Aadhar</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Blood Grp</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Orphan</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Hostel</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">APL/BPL</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Vocational</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Voc Subject</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Acad. Year</th>
+                            <th style="padding:9px 7px;border:1px solid #3b5bdb;white-space:nowrap;">Address</th>
+                        </tr>
+                    </thead>
+                    <tbody id="classTableBody"></tbody>
+                </table>
+            </div>
+            <p id="tableCount" style="font-size:0.75rem;color:#64748b;margin-top:8px;margin-bottom:0;"></p>
+        </div>
+
+    </div><!-- end #tab-summary -->
+
+    <!-- ═══════ TAB 3: DASHBOARD ═══════ -->
+    <div class="tab-panel" id="tab-dashboard">
+
+        <!-- Row 1: Top KPI cards -->
+        <div class="summary-stats" style="flex-wrap:wrap;">
+            <div class="sstat" style="background:linear-gradient(135deg,#1E3A8A,#2563EB);color:white;border:none;">
+                <h3 id="d-total" style="color:white;">0</h3><p style="color:#bfdbfe;">Total Students</p>
+            </div>
+            <div class="sstat" style="background:linear-gradient(135deg,#0369a1,#0ea5e9);color:white;border:none;">
+                <h3 id="d-boys" style="color:white;">0</h3><p style="color:#bae6fd;">Boys</p>
+            </div>
+            <div class="sstat" style="background:linear-gradient(135deg,#be185d,#ec4899);color:white;border:none;">
+                <h3 id="d-girls" style="color:white;">0</h3><p style="color:#fbcfe8;">Girls</p>
+            </div>
+            <div class="sstat" style="background:linear-gradient(135deg,#b45309,#f59e0b);color:white;border:none;">
+                <h3 id="d-orphan" style="color:white;">0</h3><p style="color:#fde68a;">Orphan Students</p>
+            </div>
+            <div class="sstat" style="background:linear-gradient(135deg,#065f46,#10b981);color:white;border:none;">
+                <h3 id="d-voc" style="color:white;">0</h3><p style="color:#a7f3d0;">Vocational Students</p>
+            </div>
+            <div class="sstat" style="background:linear-gradient(135deg,#6d28d9,#8b5cf6);color:white;border:none;">
+                <h3 id="d-hostel" style="color:white;">0</h3><p style="color:#ddd6fe;">Hostel Students</p>
+            </div>
+            <div class="sstat" style="background:linear-gradient(135deg,#7f1d1d,#ef4444);color:white;border:none;">
+                <h3 id="d-bpl" style="color:white;">0</h3><p style="color:#fecaca;">BPL Students</p>
+            </div>
+        </div>
+
+        <!-- Row 2: Class-wise breakdown table -->
+        <div class="summary-card">
+            <h3 style="margin:0 0 14px 0;color:var(--primary);">🏫 Class-wise Breakdown</h3>
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.88rem;min-width:500px;">
+                    <thead>
+                        <tr style="background:#EFF6FF;">
+                            <th style="padding:10px 8px;border:1px solid #ccc;text-align:left;">Class</th>
+                            <th style="padding:10px 8px;border:1px solid #ccc;text-align:center;">Total</th>
+                            <th style="padding:10px 8px;border:1px solid #ccc;text-align:center;">Boys</th>
+                            <th style="padding:10px 8px;border:1px solid #ccc;text-align:center;">Girls</th>
+                            <th style="padding:10px 8px;border:1px solid #ccc;text-align:center;">Orphan</th>
+                            <th style="padding:10px 8px;border:1px solid #ccc;text-align:center;">Vocational</th>
+                            <th style="padding:10px 8px;border:1px solid #ccc;text-align:center;">Hostel</th>
+                            <th style="padding:10px 8px;border:1px solid #ccc;text-align:center;">BPL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="d-classrows"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Row 3: Two column cards -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap;max-width:960px;margin:0 auto 15px auto;">
+
+            <!-- Blood Group breakdown -->
+            <div class="summary-card" style="flex:1;min-width:240px;margin:0;">
+                <h3 style="margin:0 0 12px 0;color:var(--primary);font-size:0.95rem;">🩸 Blood Group Distribution</h3>
+                <div id="d-blood"></div>
+            </div>
+
+            <!-- APL vs BPL -->
+            <div class="summary-card" style="flex:1;min-width:240px;margin:0;">
+                <h3 style="margin:0 0 12px 0;color:var(--primary);font-size:0.95rem;">📂 APL vs BPL</h3>
+                <div id="d-aplbpl"></div>
+            </div>
+
+            <!-- Vocational subjects -->
+            <div class="summary-card" style="flex:1;min-width:240px;margin:0;">
+                <h3 style="margin:0 0 12px 0;color:var(--primary);font-size:0.95rem;">🎓 Vocational Subjects</h3>
+                <div id="d-vocsubjects"></div>
+            </div>
+
+        </div>
+
+    </div><!-- end #tab-dashboard -->
+
+</div><!-- end #main-content -->
 
 <!-- printArea: hidden normally, shown only during print -->
 <div id="printArea"></div>
@@ -423,16 +653,27 @@
         document.getElementById('totalStudents').innerText = db.length;
         document.getElementById('boys').innerText  = db.filter(s => s.GENDER==='Male').length;
         document.getElementById('girls').innerText = db.filter(s => s.GENDER==='Female').length;
-        renderClassTable();
+        if (document.getElementById('tab-summary').classList.contains('active')) {
+            updateSummaryStats(); renderClassTable();
+        }
+        if (document.getElementById('tab-dashboard').classList.contains('active')) {
+            renderDashboard();
+        }
     }
 
     /* ══════════════════════════════════════════════════════
        BUILD ONE STUDENT'S PRINT PAGE HTML
-       Called by both printRecord() and printAll()
+       addBreak = true  → adds .print-page-break (page-break-after:always)
+                          used for every page EXCEPT the last one
+       addBreak = false → NO page-break-after at all
+                          used for the last (or only) page
+       This JS-controlled approach is the only reliable way
+       to prevent a blank trailing page across all browsers.
     ══════════════════════════════════════════════════════ */
-    function buildStudentPageHTML(s) {
+    function buildStudentPageHTML(s, addBreak) {
         const academicYear = s.ACADEMIC_YEAR || '-';
-        const numRows      = Math.ceil(FIELDS.length / 3);   // 13 rows for 38 fields
+        const numRows      = Math.ceil(FIELDS.length / 3);
+        const breakClass   = addBreak ? ' print-page-break' : '';
 
         const photoHtml = s.photo
             ? `<img src="${s.photo}" class="print-photo">`
@@ -445,7 +686,7 @@
             </div>`).join('');
 
         return `
-        <div class="print-page">
+        <div class="print-page${breakClass}">
             <div class="print-header">
                 <div class="print-header-text">
                     <h1>Student Admission Record</h1>
@@ -461,29 +702,29 @@
     }
 
     /* ══════════════════════════════════════════════════════
-       FIX 1 + EXISTING: PRINT SINGLE STUDENT
+       PRINT SINGLE STUDENT
+       addBreak = false → only one page, no break needed
     ══════════════════════════════════════════════════════ */
     function printRecord(id) {
         const s = db.find(x => x.id === id);
         if (!s) { showToast('Record not found','#EF4444'); return; }
-        document.getElementById('printArea').innerHTML = buildStudentPageHTML(s);
+        document.getElementById('printArea').innerHTML = buildStudentPageHTML(s, false);
         setTimeout(() => window.print(), 100);
     }
 
     /* ══════════════════════════════════════════════════════
-       FIX 2: PRINT ALL STUDENTS — one page per student
-       All pages go into #printArea; page-break-after:always
-       on each .print-page handles pagination automatically.
-       The last page uses page-break-after:avoid so no
-       trailing blank page is added.
+       PRINT ALL STUDENTS — one A4 page per student
+       Every page except the LAST gets addBreak=true.
+       The last page gets addBreak=false → no page-break-after
+       → guaranteed no blank trailing page.
     ══════════════════════════════════════════════════════ */
     function printAll() {
         if (!db.length) { showToast('No records to print!','#F59E0B'); return; }
         if (!confirm(`Print ALL ${db.length} student form(s)?\nThis may take a moment for large batches.`)) return;
         showToast(`⏳ Preparing ${db.length} pages...`,'#1E3A8A');
-        // Short delay so toast renders before print dialog
         setTimeout(() => {
-            document.getElementById('printArea').innerHTML = db.map(s => buildStudentPageHTML(s)).join('');
+            document.getElementById('printArea').innerHTML =
+                db.map((s, i) => buildStudentPageHTML(s, i < db.length - 1)).join('');
             setTimeout(() => window.print(), 200);
         }, 300);
     }
@@ -568,6 +809,199 @@
     }
 
     /* ══════════════════════════════════════════════════════
+       TAB SWITCHING — 3 tabs
+    ══════════════════════════════════════════════════════ */
+    function switchTab(n) {
+        [1,2,3].forEach(i => {
+            const ids = {1:'tab-form',2:'tab-summary',3:'tab-dashboard'};
+            document.getElementById(ids[i]).classList.toggle('active', i===n);
+            document.getElementById('tabBtn'+i).classList.toggle('active', i===n);
+        });
+        if (n === 2) { updateSummaryStats(); renderClassTable(); }
+        if (n === 3) { renderDashboard(); }
+    }
+
+    /* ══════════════════════════════════════════════════════
+       SUMMARY TAB — quick stats
+    ══════════════════════════════════════════════════════ */
+    function updateSummaryStats() {
+        document.getElementById('s-total').textContent  = db.length;
+        document.getElementById('s-boys').textContent   = db.filter(s => s.GENDER==='Male').length;
+        document.getElementById('s-girls').textContent  = db.filter(s => s.GENDER==='Female').length;
+        document.getElementById('s-ix').textContent     = db.filter(s => s.CLASS==='IX').length;
+        document.getElementById('s-x').textContent      = db.filter(s => s.CLASS==='X').length;
+        document.getElementById('s-xi').textContent     = db.filter(s => s.CLASS==='XI').length;
+        document.getElementById('s-xii').textContent    = db.filter(s => s.CLASS==='XII').length;
+    }
+
+    function clearTableFilters() {
+        ['tbl-class','tbl-year','tbl-gender','tbl-voc','tbl-orphan','tbl-hostel','tbl-aplbpl']
+            .forEach(id => document.getElementById(id).value = '');
+        renderClassTable();
+    }
+
+    function renderClassTable() {
+        if (typeof db === 'undefined') return;
+        const fCls    = document.getElementById('tbl-class').value;
+        const fYear   = document.getElementById('tbl-year').value;
+        const fGender = document.getElementById('tbl-gender').value;
+        const fVoc    = document.getElementById('tbl-voc').value;
+        const fOrphan = document.getElementById('tbl-orphan').value;
+        const fHostel = document.getElementById('tbl-hostel').value;
+        const fApl    = document.getElementById('tbl-aplbpl').value;
+
+        const rows = db.filter(s =>
+            (!fCls    || s.CLASS         === fCls)    &&
+            (!fYear   || s.ACADEMIC_YEAR === fYear)   &&
+            (!fGender || s.GENDER        === fGender) &&
+            (!fVoc    || s.VOC_STATUS    === fVoc)    &&
+            (!fOrphan || s.ORPHAN        === fOrphan) &&
+            (!fHostel || (s.HOSTEL==='Yes'||s.HOSTEL_STUDENT==='Yes') === (fHostel==='Yes')) &&
+            (!fApl    || s.APL_BPL       === fApl)
+        );
+
+        const td = (val, center) =>
+            `<td style="padding:7px 8px;border:1px solid #e2e8f0;white-space:nowrap;${center?'text-align:center;':''}">${val||'-'}</td>`;
+
+        document.getElementById('classTableBody').innerHTML = rows.length
+            ? rows.map((r,i) => `
+                <tr style="background:${i%2===0?'#fff':'#F8FAFF'};">
+                    ${td(i+1,true)}
+                    ${td(r.CLASS,true)}
+                    ${td(r.DIVISION,true)}
+                    ${td(r.ROLL_NO,true)}
+                    ${td(r.GR_NO,true)}
+                    <td style="padding:7px 8px;border:1px solid #e2e8f0;font-weight:600;white-space:nowrap;">${r.STUDENT_NAME||'-'}</td>
+                    ${td(r.GENDER,true)}
+                    ${td(r.DOB_LC,true)}
+                    ${td(r.CASTE,true)}
+                    ${td(r.FATHER_NAME)}
+                    ${td(r.MOTHER_NAME)}
+                    ${td(r.MOBILE_1,true)}
+                    ${td(r.MOBILE_2,true)}
+                    ${td(r.AADHAR_NO,true)}
+                    ${td(r.BLOOD_GROUP,true)}
+                    <td style="padding:7px 8px;border:1px solid #e2e8f0;text-align:center;white-space:nowrap;">
+                        <span style="padding:2px 8px;border-radius:99px;font-size:0.75rem;font-weight:700;
+                            background:${r.ORPHAN==='Yes'?'#fef3c7':'#f0fdf4'};
+                            color:${r.ORPHAN==='Yes'?'#92400e':'#166534'};">
+                            ${r.ORPHAN||'No'}
+                        </span>
+                    </td>
+                    <td style="padding:7px 8px;border:1px solid #e2e8f0;text-align:center;white-space:nowrap;">
+                        <span style="padding:2px 8px;border-radius:99px;font-size:0.75rem;font-weight:700;
+                            background:${(r.HOSTEL==='Yes'||r.HOSTEL_STUDENT==='Yes')?'#eff6ff':'#f9fafb'};
+                            color:${(r.HOSTEL==='Yes'||r.HOSTEL_STUDENT==='Yes')?'#1e40af':'#6b7280'};">
+                            ${(r.HOSTEL==='Yes'||r.HOSTEL_STUDENT==='Yes')?'Yes':'No'}
+                        </span>
+                    </td>
+                    ${td(r.APL_BPL,true)}
+                    <td style="padding:7px 8px;border:1px solid #e2e8f0;text-align:center;white-space:nowrap;">
+                        <span style="padding:2px 8px;border-radius:99px;font-size:0.75rem;font-weight:700;
+                            background:${r.VOC_STATUS==='Yes'?'#f0fdf4':'#f9fafb'};
+                            color:${r.VOC_STATUS==='Yes'?'#166534':'#6b7280'};">
+                            ${r.VOC_STATUS||'No'}
+                        </span>
+                    </td>
+                    ${td(r.VOC_NAME)}
+                    ${td(r.ACADEMIC_YEAR,true)}
+                    <td style="padding:7px 8px;border:1px solid #e2e8f0;max-width:160px;white-space:normal;">${r.ADDRESS||'-'}</td>
+                </tr>`).join('')
+            : `<tr><td colspan="22" style="text-align:center;padding:25px;color:#888;">No records match the selected filters.</td></tr>`;
+
+        document.getElementById('tableCount').textContent =
+            `Showing ${rows.length} of ${db.length} total student${db.length!==1?'s':''}`;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       DASHBOARD TAB
+    ══════════════════════════════════════════════════════ */
+    function renderDashboard() {
+        const total = db.length;
+
+        // KPI cards
+        document.getElementById('d-total').textContent  = total;
+        document.getElementById('d-boys').textContent   = db.filter(s=>s.GENDER==='Male').length;
+        document.getElementById('d-girls').textContent  = db.filter(s=>s.GENDER==='Female').length;
+        document.getElementById('d-orphan').textContent = db.filter(s=>s.ORPHAN==='Yes').length;
+        document.getElementById('d-voc').textContent    = db.filter(s=>s.VOC_STATUS==='Yes').length;
+        document.getElementById('d-hostel').textContent = db.filter(s=>s.HOSTEL==='Yes'||s.HOSTEL_STUDENT==='Yes').length;
+        document.getElementById('d-bpl').textContent    = db.filter(s=>s.APL_BPL==='BPL').length;
+
+        // Class-wise breakdown rows
+        const classes = ['IX','X','XI','XII'];
+        const clsColors = ['#2563EB','#059669','#7C3AED','#DC2626'];
+        document.getElementById('d-classrows').innerHTML =
+            classes.map((cls,ci) => {
+                const sub    = db.filter(s=>s.CLASS===cls);
+                const boys   = sub.filter(s=>s.GENDER==='Male').length;
+                const girls  = sub.filter(s=>s.GENDER==='Female').length;
+                const orphan = sub.filter(s=>s.ORPHAN==='Yes').length;
+                const voc    = sub.filter(s=>s.VOC_STATUS==='Yes').length;
+                const hostel = sub.filter(s=>s.HOSTEL==='Yes'||s.HOSTEL_STUDENT==='Yes').length;
+                const bpl    = sub.filter(s=>s.APL_BPL==='BPL').length;
+                if (!sub.length) return '';
+                return `<tr style="background:${ci%2===0?'#fff':'#f8faff'};">
+                    <td style="padding:10px 8px;border:1px solid #e2e8f0;font-weight:800;color:${clsColors[ci]};font-size:1rem;">Class ${cls}</td>
+                    <td style="padding:10px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;">${sub.length}</td>
+                    <td style="padding:10px 8px;border:1px solid #e2e8f0;text-align:center;color:#0369a1;font-weight:700;">${boys}</td>
+                    <td style="padding:10px 8px;border:1px solid #e2e8f0;text-align:center;color:#be185d;font-weight:700;">${girls}</td>
+                    <td style="padding:10px 8px;border:1px solid #e2e8f0;text-align:center;">${orphan}</td>
+                    <td style="padding:10px 8px;border:1px solid #e2e8f0;text-align:center;">${voc}</td>
+                    <td style="padding:10px 8px;border:1px solid #e2e8f0;text-align:center;">${hostel}</td>
+                    <td style="padding:10px 8px;border:1px solid #e2e8f0;text-align:center;">${bpl}</td>
+                </tr>`;
+            }).join('') ||
+            `<tr><td colspan="8" style="text-align:center;padding:20px;color:#888;">No records yet.</td></tr>`;
+
+        // Blood group mini bars
+        const bloods = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
+        const bgColors = ['#2563EB','#3b82f6','#059669','#10b981','#7C3AED','#8b5cf6','#DC2626','#f87171'];
+        const bCounts = bloods.map(bg => db.filter(s=>s.BLOOD_GROUP===bg).length);
+        const bMax = Math.max(1, ...bCounts);
+        document.getElementById('d-blood').innerHTML = bloods.map((bg,i) =>
+            `<div class="d-bar-row">
+                <span class="d-bar-label">${bg}</span>
+                <div class="d-bar-track"><div class="d-bar-fill" style="width:${Math.round(bCounts[i]/bMax*100)}%;background:${bgColors[i]};"></div></div>
+                <span class="d-bar-count">${bCounts[i]}</span>
+            </div>`).join('');
+
+        // APL vs BPL bars
+        const apl = db.filter(s=>s.APL_BPL==='APL').length;
+        const bpl = db.filter(s=>s.APL_BPL==='BPL').length;
+        const abMax = Math.max(1, apl, bpl);
+        document.getElementById('d-aplbpl').innerHTML =
+            `<div class="d-bar-row">
+                <span class="d-bar-label">APL</span>
+                <div class="d-bar-track"><div class="d-bar-fill" style="width:${Math.round(apl/abMax*100)}%;background:#2563EB;"></div></div>
+                <span class="d-bar-count">${apl}</span>
+            </div>
+            <div class="d-bar-row">
+                <span class="d-bar-label">BPL</span>
+                <div class="d-bar-track"><div class="d-bar-fill" style="width:${Math.round(bpl/abMax*100)}%;background:#DC2626;"></div></div>
+                <span class="d-bar-count">${bpl}</span>
+            </div>`;
+
+        // Vocational subjects
+        const vocSubs = {};
+        db.filter(s=>s.VOC_STATUS==='Yes'&&s.VOC_NAME).forEach(s=>{
+            const k = s.VOC_NAME.trim().toUpperCase()||'UNKNOWN';
+            vocSubs[k] = (vocSubs[k]||0)+1;
+        });
+        const vocEntries = Object.entries(vocSubs).sort((a,b)=>b[1]-a[1]);
+        const vsMax = vocEntries.length ? vocEntries[0][1] : 1;
+        const vsColors = ['#2563EB','#059669','#7C3AED','#DC2626','#d97706','#0891b2'];
+        document.getElementById('d-vocsubjects').innerHTML = vocEntries.length
+            ? vocEntries.map(([sub,cnt],i) =>
+                `<div class="d-bar-row">
+                    <span class="d-bar-label" style="min-width:80px;font-size:0.7rem;text-align:right;">${sub.length>10?sub.slice(0,10)+'…':sub}</span>
+                    <div class="d-bar-track"><div class="d-bar-fill" style="width:${Math.round(cnt/vsMax*100)}%;background:${vsColors[i%6]};"></div></div>
+                    <span class="d-bar-count">${cnt}</span>
+                </div>`).join('')
+            : '<p style="color:#888;font-size:0.8rem;text-align:center;padding:10px 0;">No vocational students yet.</p>';
+    }
+
+    /* ══════════════════════════════════════════════════════
        EXPORT TO EXCEL (photos excluded to keep file small)
     ══════════════════════════════════════════════════════ */
     function exportToExcel() {
@@ -584,56 +1018,11 @@
     }
 </script>
 
-<!-- Class-Wise Student Table -->
-<div style="max-width:900px;margin:25px auto;background:#fff;padding:15px;border-radius:10px;border:1px solid #BFDBFE;">
-    <h3 style="margin-top:0;">Class Wise Student Table</h3>
-    <select id="tableClassFilter" onchange="renderClassTable()" style="margin-bottom:10px;width:auto;min-width:160px;padding:6px;border-radius:6px;border:1px solid #ccc;">
-        <option value="">All Classes</option>
-        <option>IX</option><option>X</option><option>XI</option><option>XII</option>
-    </select>
-    <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
-        <thead>
-            <tr style="background:#EFF6FF;">
-                <th style="padding:8px;border:1px solid #ccc;">#</th>
-                <th style="padding:8px;border:1px solid #ccc;">Class</th>
-                <th style="padding:8px;border:1px solid #ccc;">Acad. Year</th>
-                <th style="padding:8px;border:1px solid #ccc;">Roll</th>
-                <th style="padding:8px;border:1px solid #ccc;">Name</th>
-                <th style="padding:8px;border:1px solid #ccc;">Gender</th>
-                <th style="padding:8px;border:1px solid #ccc;">Mobile</th>
-            </tr>
-        </thead>
-        <tbody id="classTableBody"></tbody>
-    </table>
-    <p id="tableCount" style="font-size:0.75rem;color:#64748b;margin-top:8px;margin-bottom:0;"></p>
-</div>
 
-<script>
-    function renderClassTable() {
-        if (typeof db === 'undefined') return;
-        const cls  = document.getElementById('tableClassFilter').value;
-        const rows = db.filter(s => !cls || s.CLASS === cls);
-        document.getElementById('classTableBody').innerHTML = rows.length
-            ? rows.map((r,i) => `
-                <tr style="background:${i%2===0?'#fff':'#F8FAFF'};">
-                    <td style="padding:7px;border:1px solid #ccc;text-align:center;">${i+1}</td>
-                    <td style="padding:7px;border:1px solid #ccc;text-align:center;">${r.CLASS||''}</td>
-                    <td style="padding:7px;border:1px solid #ccc;text-align:center;">${r.ACADEMIC_YEAR||''}</td>
-                    <td style="padding:7px;border:1px solid #ccc;text-align:center;">${r.ROLL_NO||''}</td>
-                    <td style="padding:7px;border:1px solid #ccc;font-weight:600;">${r.STUDENT_NAME||''}</td>
-                    <td style="padding:7px;border:1px solid #ccc;text-align:center;">${r.GENDER||''}</td>
-                    <td style="padding:7px;border:1px solid #ccc;">${r.MOBILE_1||''}</td>
-                </tr>`).join('')
-            : '<tr><td colspan="7" style="text-align:center;padding:15px;color:#888;">No records found.</td></tr>';
-        document.getElementById('tableCount').textContent =
-            `Showing ${rows.length} of ${db.length} total student${db.length!==1?'s':''}`;
-    }
-    window.addEventListener('load', () => setTimeout(renderClassTable, 300));
-</script>
 
 <!-- PWA: Service Worker Registration -->
 <script>
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && !location.hostname.includes('claudeusercontent.com')) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
                 .then(reg => console.log('SW registered:', reg.scope))
