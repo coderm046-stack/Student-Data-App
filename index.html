@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABC HIGH SCHOOL - Student Data Portal</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+<style>
+
+:root{
+--primary:#1E3A8A;
+--secondary:#10B981;
+--danger:#EF4444;
+--warning:#F59E0B;
+--bg:#EFF6FF;
+}
+
+body{
+font-family:Segoe UI;
+background:var(--bg);
+margin:0;
+padding:20px;
+}
+
+header{
+background:var(--primary);
+color:white;
+padding:20px;
+border-radius:12px;
+text-align:center;
+max-width:700px;
+margin:auto;
+box-shadow:0 5px 15px rgba(0,0,0,0.2);
+}
+
+header h1{
+margin:0;
+font-size:26px;
+}
+
+header p{
+margin:5px 0 0 0;
+opacity:0.9;
+}
+
+.dashboard{
+display:flex;
+gap:10px;
+max-width:700px;
+margin:15px auto;
+}
+
+.stat{
+flex:1;
+background:white;
+padding:15px;
+border-radius:10px;
+text-align:center;
+box-shadow:0 5px 10px rgba(0,0,0,0.1);
+}
+
+.card{
+background:white;
+max-width:700px;
+margin:auto;
+padding:20px;
+border-radius:12px;
+box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+
+.section-title{
+font-weight:bold;
+margin-top:20px;
+color:var(--primary);
+border-bottom:2px solid #ddd;
+padding-bottom:5px;
+}
+
+.field-group{
+margin-bottom:10px;
+}
+
+input,select,textarea{
+width:100%;
+padding:8px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+button{
+width:100%;
+padding:12px;
+margin-top:8px;
+border:none;
+border-radius:8px;
+color:white;
+font-weight:bold;
+cursor:pointer;
+transition:0.2s;
+}
+
+button:hover{
+transform:scale(1.02);
+}
+
+.btn-add{background:var(--secondary)}
+.btn-search{background:var(--primary)}
+.btn-clear{background:var(--danger)}
+
+.search-item{
+background:#f1f5f9;
+padding:12px;
+border-radius:8px;
+margin-bottom:10px;
+border-left:5px solid var(--primary);
+}
+
+#searchModal{
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.7);
+padding:20px;
+}
+
+.modal{
+background:white;
+max-width:500px;
+margin:auto;
+padding:20px;
+border-radius:12px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>ABC HIGH SCHOOL</h1>
+<p>Student Data Portal</p>
+</header>
+
+<div class="dashboard">
+
+<div class="stat">
+<h3 id="totalStudents">0</h3>
+<p>Total Students</p>
+</div>
+
+<div class="stat">
+<h3 id="boys">0</h3>
+<p>Boys</p>
+</div>
+
+<div class="stat">
+<h3 id="girls">0</h3>
+<p>Girls</p>
+</div>
+
+</div>
+
+<div class="card">
+
+<form id="studentForm">
+
+<div class="section-title">Academic</div>
+
+<div class="field-group">
+<label>Class</label>
+<select id="CLASS">
+<option>IX</option>
+<option>X</option>
+<option>XI</option>
+<option>XII</option>
+</select>
+</div>
+
+<div class="field-group">
+<label>Roll No</label>
+<input id="ROLL_NO">
+</div>
+
+<div class="field-group">
+<label>Student Name</label>
+<input id="STUDENT_NAME">
+</div>
+
+<div class="field-group">
+<label>Gender</label>
+<select id="GENDER">
+<option>Male</option>
+<option>Female</option>
+</select>
+</div>
+
+<div class="field-group">
+<label>Mobile</label>
+<input id="MOBILE_1">
+</div>
+
+<button type="button" class="btn-add" onclick="saveRecord()">Save Record</button>
+
+<button type="button" class="btn-search" onclick="openSearch()">Search Students</button>
+
+<button type="button" onclick="exportExcel()">Export Excel</button>
+
+<button type="button" onclick="downloadBackup()">Download Backup</button>
+
+<button type="button" onclick="restoreBackup()">Restore Backup</button>
+
+<button type="button" class="btn-clear" onclick="wipeDatabase()">Wipe Database</button>
+
+</form>
+
+</div>
+
+<div id="searchModal">
+
+<div class="modal">
+
+<h3>Search Students</h3>
+
+<input id="searchInput" placeholder="Search..." onkeyup="performSearch()">
+
+<div id="searchResults"></div>
+
+<button onclick="closeSearch()">Close</button>
+
+</div>
+
+</div>
+
+<script>
+
+let db=JSON.parse(localStorage.getItem("eduDB_v4_final"))||[];
+
+function updateDashboard(){
+
+document.getElementById("totalStudents").innerText=db.length;
+
+let boys=db.filter(s=>s.GENDER=="Male").length;
+let girls=db.filter(s=>s.GENDER=="Female").length;
+
+document.getElementById("boys").innerText=boys;
+document.getElementById("girls").innerText=girls;
+
+}
+
+updateDashboard();
+
+function saveRecord(){
+
+let record={
+id:Date.now(),
+CLASS:CLASS.value,
+ROLL_NO:ROLL_NO.value,
+STUDENT_NAME:STUDENT_NAME.value,
+GENDER:GENDER.value,
+MOBILE_1:MOBILE_1.value
+};
+
+db.push(record);
+
+localStorage.setItem("eduDB_v4_final",JSON.stringify(db));
+
+updateDashboard();
+
+alert("Saved");
+
+}
+
+function openSearch(){
+searchModal.style.display="block";
+performSearch();
+}
+
+function closeSearch(){
+searchModal.style.display="none";
+}
+
+function performSearch(){
+
+let q=searchInput.value.toLowerCase();
+
+let results=db.filter(r=>
+r.STUDENT_NAME.toLowerCase().includes(q)
+|| r.ROLL_NO.includes(q)
+);
+
+searchResults.innerHTML=results.map(r=>`
+
+<div class="search-item">
+
+<b>${r.STUDENT_NAME}</b><br>
+
+Class ${r.CLASS} | Roll ${r.ROLL_NO}
+
+<br><br>
+
+<button onclick="deleteStudent(${r.id})">Delete</button>
+
+</div>
+
+`).join("");
+
+}
+
+function deleteStudent(id){
+
+db=db.filter(s=>s.id!=id);
+
+localStorage.setItem("eduDB_v4_final",JSON.stringify(db));
+
+performSearch();
+
+updateDashboard();
+
+}
+
+function exportExcel(){
+
+let ws=XLSX.utils.json_to_sheet(db);
+
+let wb=XLSX.utils.book_new();
+
+XLSX.utils.book_append_sheet(wb,ws,"Students");
+
+XLSX.writeFile(wb,"Student_Data.xlsx");
+
+}
+
+function downloadBackup(){
+
+let data=JSON.stringify(db);
+
+let blob=new Blob([data]);
+
+let a=document.createElement("a");
+
+a.href=URL.createObjectURL(blob);
+
+a.download="student_backup.json";
+
+a.click();
+
+}
+
+function restoreBackup(){
+
+let input=document.createElement("input");
+
+input.type="file";
+
+input.onchange=e=>{
+
+let file=e.target.files[0];
+
+let reader=new FileReader();
+
+reader.onload=()=>{
+
+db=JSON.parse(reader.result);
+
+localStorage.setItem("eduDB_v4_final",JSON.stringify(db));
+
+updateDashboard();
+
+alert("Backup Restored");
+
+};
+
+reader.readAsText(file);
+
+};
+
+input.click();
+
+}
+
+function wipeDatabase(){
+
+if(confirm("Delete all data?")){
+
+db=[];
+
+localStorage.setItem("eduDB_v4_final","[]");
+
+updateDashboard();
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
