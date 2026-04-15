@@ -1028,12 +1028,22 @@
                     <option value="APL">APL</option>
                     <option value="BPL">BPL</option>
                 </select>
+                <select id="tbl-pen" onchange="renderClassTable()" class="filter-select">
+                    <option value="">PEN: All</option>
+                    <option value="filled">PEN: Filled</option>
+                    <option value="empty">PEN: Empty</option>
+                </select>
+                <select id="tbl-apaar" onchange="renderClassTable()" class="filter-select">
+                    <option value="">APAAR: All</option>
+                    <option value="filled">APAAR: Filled</option>
+                    <option value="empty">APAAR: Empty</option>
+                </select>
                 <button onclick="clearTableFilters()" class="filter-clear-btn"><i class="fa-solid fa-xmark"></i> Clear</button>
             </div>
 
             <!-- Scrollable Table — all fields -->
             <div class="summary-table-wrap">
-                <table id="summaryTable" style="min-width:1400px;width:100%;border-collapse:collapse;font-size:0.8rem;">
+                <table id="summaryTable" style="min-width:1600px;width:100%;border-collapse:collapse;font-size:0.8rem;">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -1050,6 +1060,8 @@
                             <th>Mobile 1</th>
                             <th>Mobile 2</th>
                             <th>Aadhar</th>
+                            <th>PEN</th>
+                            <th>APAAR ID</th>
                             <th>Blood Grp</th>
                             <th>Orphan</th>
                             <th>Hostel</th>
@@ -1591,7 +1603,7 @@
     }
 
     function clearTableFilters() {
-        ['tbl-class','tbl-div','tbl-year','tbl-gender','tbl-voc','tbl-orphan','tbl-hostel','tbl-aplbpl']
+        ['tbl-class','tbl-div','tbl-year','tbl-gender','tbl-voc','tbl-orphan','tbl-hostel','tbl-aplbpl','tbl-pen','tbl-apaar']
             .forEach(id => document.getElementById(id).value = '');
         renderClassTable();
     }
@@ -1606,6 +1618,8 @@
         const fOrphan = document.getElementById('tbl-orphan').value;
         const fHostel = document.getElementById('tbl-hostel').value;
         const fApl    = document.getElementById('tbl-aplbpl').value;
+        const fPen    = document.getElementById('tbl-pen').value;
+        const fApaar  = document.getElementById('tbl-apaar').value;
 
         const rows = db.filter(s => {
             const hostelYes = s.HOSTEL_STUDENT==='Yes';
@@ -1617,6 +1631,10 @@
             if (fOrphan && s.ORPHAN        !== fOrphan) return false;
             if (fHostel && (fHostel==='Yes') !== hostelYes) return false;
             if (fApl    && s.APL_BPL       !== fApl)    return false;
+            if (fPen === 'filled' && !s.PEN)   return false;
+            if (fPen === 'empty'  && s.PEN)    return false;
+            if (fApaar === 'filled' && !s.APAAR) return false;
+            if (fApaar === 'empty'  && s.APAAR)  return false;
             return true;
         });
 
@@ -1640,6 +1658,10 @@
                     ${td(r.MOBILE_1,true)}
                     ${td(r.MOBILE_2,true)}
                     ${td(r.AADHAR_NO,true)}
+                    ${td(r.PEN,true)}
+                    <td style="padding:7px 8px;border:1px solid #e2e8f0;white-space:nowrap;text-align:center;">
+                        ${r.APAAR ? `<span style="padding:2px 8px;border-radius:99px;font-size:0.75rem;font-weight:700;background:#eff6ff;color:#1e40af;">${r.APAAR}</span>` : '<span style="color:#94a3b8;font-size:0.75rem;">-</span>'}
+                    </td>
                     ${td(r.BLOOD_GROUP,true)}
                     <td style="padding:7px 8px;border:1px solid #e2e8f0;text-align:center;white-space:nowrap;">
                         <span style="padding:2px 8px;border-radius:99px;font-size:0.75rem;font-weight:700;
@@ -1667,7 +1689,7 @@
                     ${td(r.ACADEMIC_YEAR,true)}
                     <td style="padding:7px 8px;border:1px solid #e2e8f0;max-width:160px;white-space:normal;">${r.ADDRESS||'-'}</td>
                 </tr>`).join('')
-            : `<tr><td colspan="22" style="text-align:center;padding:25px;color:#888;">No records match the selected filters.</td></tr>`;
+            : `<tr><td colspan="24" style="text-align:center;padding:25px;color:#888;">No records match the selected filters.</td></tr>`;
 
         document.getElementById('tableCount').textContent =
             `Showing ${rows.length} of ${db.length} total student${db.length!==1?'s':''}`;
