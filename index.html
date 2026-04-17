@@ -1356,10 +1356,16 @@
     }
     function startEdit(id) {
         const s = db.find(x => x.id === id);
+        if (!s) { showToast('Record not found — possible duplicate ID. Please reimport data.', '#EF4444'); return; }
         FIELDS.forEach(f => { if (document.getElementById(f)) document.getElementById(f).value = s[f]||''; });
+        // FIX: Always update photo area — clear it first so a previous student's
+        // photo never lingers when the current student has no photo.
         if (s.photo) {
             document.getElementById('photo-preview').innerHTML = `<img src="${s.photo}">`;
             document.getElementById('photoBase64').value = s.photo;
+        } else {
+            document.getElementById('photo-preview').innerHTML = '<span>3.5 x 4.5 cm Photo<br>Required</span>';
+            document.getElementById('photoBase64').value = '';
         }
         document.getElementById('editID').value = id;
         document.getElementById('saveBtn').style.display   = 'none';
@@ -1367,7 +1373,7 @@
         toggleVoc(s.VOC_STATUS); closeSearch(); window.scrollTo(0,0);
     }
     function handleUpdate() {
-        const id    = parseInt(document.getElementById('editID').value);
+        const id    = Number(document.getElementById('editID').value);
         const index = db.findIndex(s => s.id === id);
         if (index === -1) { showToast('Record not found','#EF4444'); return; }
         FIELDS.forEach(f => { if (document.getElementById(f)) db[index][f] = document.getElementById(f).value; });
@@ -1554,9 +1560,16 @@
 
                 let imported = 0, skipped = 0;
 
+                // FIX: Generate a unique base ID ONCE before the loop.
+                // Using Date.now() inside the loop returns the same ms value
+                // for every row (loop is fast), and the old random offset
+                // could still produce collisions between rows — causing
+                // db.find() to return the wrong student when editing.
+                const importIdBase = Date.now() * 10000;
+
                 rows.forEach((row, i) => {
                     const record = {
-                        id   : Date.now() + i * 7 + Math.floor(Math.random()*999),
+                        id   : importIdBase + i,   // guaranteed unique: same base + unique index
                         photo: ''
                     };
                     let hasData = false;
