@@ -1923,9 +1923,20 @@
     ══════════════════════════════════════════════════════ */
     function exportToExcel() {
         if (!db.length) { showToast('No data to export!','#F59E0B'); return; }
+
+        // Date fields stored internally as YYYY-MM-DD — convert to DD/MM/YYYY for export
+        const DATE_FIELDS = ['DOB_LC'];
+        function fmtExportDate(v) {
+            if (!v) return '';
+            const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            return m ? `${m[3]}/${m[2]}/${m[1]}` : v;
+        }
+
         const exportData = db.map(s => {
             const row = {};
-            FIELDS.forEach(f => row[f] = s[f]||'');
+            FIELDS.forEach(f => {
+                row[f] = DATE_FIELDS.includes(f) ? fmtExportDate(s[f]) : (s[f]||'');
+            });
             return row;
         });
         const ws = XLSX.utils.json_to_sheet(exportData);
